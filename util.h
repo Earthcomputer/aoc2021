@@ -15,9 +15,23 @@ namespace util {
     }
 
     template<class T>
-    void minmax(T& a, T& b) {
+    constexpr void minmax(T& a, T& b) {
         if (b < a) {
             std::swap(a, b);
+        }
+    }
+
+    template<class T>
+    constexpr int bits_required(T value) {
+        if (value <= 0) {
+            return 0;
+        }
+        int bits = 0;
+        for (T res = 1;; res <<= 1) {
+            if (res > value) {
+                return bits;
+            }
+            ++bits;
         }
     }
 }
