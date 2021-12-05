@@ -3,6 +3,7 @@ project(aoc2021)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(aoc2021 main.cpp registration.cpp
+add_executable(aoc2021 main.cpp util.cpp registration.cpp
         day4.cpp
+        day5.cpp
         )
