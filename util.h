@@ -35,3 +35,12 @@ namespace util {
         }
     }
 }
+
+namespace std {
+    template<class A, class B>
+    struct hash<std::pair<A, B>> {
+        int operator()(const std::pair<A, B>& pair) const {
+            return std::hash<A>{}(pair.first) + 31 * std::hash<B>{}(pair.second);
+        }
+    };
+}
