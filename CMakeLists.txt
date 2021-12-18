@@ -21,4 +21,5 @@ add_executable(aoc2021 main.cpp util.cpp registration.cpp
         day15.cpp
         day16.cpp
         day17.cpp
+        day18.cpp
         )
