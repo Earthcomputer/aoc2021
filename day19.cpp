@@ -1,49 +1,18 @@
 
-#include <utility>
 #include <unordered_set>
 #include <iostream>
 
+#include "point3d.h"
 #include "registration.h"
 #include "util.h"
 
 IMPLEMENT_DAY(19, Day19)
 
 namespace {
-    class Point {
-    public:
-        int x;
-        int y;
-        int z;
-
-        constexpr Point() noexcept: x(0), y(0), z(0) {}
-
-        constexpr Point(int x, int y, int z) noexcept: x(x), y(y), z(z) {}
-
-        constexpr bool operator==(const Point &other) const noexcept {
-            return x == other.x && y == other.y && z == other.z;
-        }
-
-        constexpr bool operator!=(const Point &other) const noexcept {
-            return !(*this == other);
-        }
-
-        constexpr Point operator+(const Point& other) const noexcept {
-            return {x + other.x, y + other.y, z + other.z};
-        }
-
-        constexpr Point operator-(const Point& other) const noexcept {
-            return {x - other.x, y - other.y, z - other.z};
-        }
-    };
-
-    std::ostream& operator<<(std::ostream& os, const Point& point) {
-        return os << "(" << point.x << ", " << point.y << ", " << point.z << ")";
-    }
-
     struct Rotation {
         int8_t m00, m10, m20, m01, m11, m21, m02, m12, m22;
 
-        [[nodiscard]] constexpr Point rotate(const Point& point) const {
+        [[nodiscard]] constexpr Point3d rotate(const Point3d& point) const {
             return {
                     m00 * point.x + m01 * point.y + m02 * point.z,
                     m10 * point.x + m11 * point.y + m12 * point.z,
@@ -80,19 +49,10 @@ namespace {
     };
 }
 
-namespace std {
-    template<>
-    struct hash<Point> {
-        size_t operator()(const Point& point) const noexcept {
-            return 961 * point.x + 31 * point.y + point.z;
-        }
-    };
-}
-
 namespace {
-    std::vector<std::vector<Point>> parse_input(const std::vector<std::string>& lines) {
-        std::vector<std::vector<Point>> result;
-        std::vector<Point>* current_scanner = &result.emplace_back();
+    std::vector<std::vector<Point3d>> parse_input(const std::vector<std::string>& lines) {
+        std::vector<std::vector<Point3d>> result;
+        std::vector<Point3d>* current_scanner = &result.emplace_back();
         for (const auto& line : lines) {
             if (line.empty()) {
                 current_scanner = &result.emplace_back();
@@ -105,27 +65,27 @@ namespace {
     }
 
     bool find_intersection(
-            const std::vector<Point>& points_a,
-            const std::vector<Point>& points_b,
-            Point& out_origin_a,
-            Point& out_origin_b,
+            const std::vector<Point3d>& points_a,
+            const std::vector<Point3d>& points_b,
+            Point3d& out_origin_a,
+            Point3d& out_origin_b,
             const Rotation*& out_rotation
     ) {
-        for (const Point& origin_a : points_a) {
-            std::vector<Point> relpoints_a;
+        for (const Point3d& origin_a : points_a) {
+            std::vector<Point3d> relpoints_a;
             relpoints_a.reserve(points_a.size());
-            for (const Point& other : points_a) {
+            for (const Point3d& other : points_a) {
                 relpoints_a.push_back(other - origin_a);
             }
 
             for (const Rotation& rotation : ROTATIONS) {
-                for (const Point& origin_b : points_b) {
-                    std::unordered_set<Point> relpoints_b;
-                    for (const Point& other : points_b) {
+                for (const Point3d& origin_b : points_b) {
+                    std::unordered_set<Point3d> relpoints_b;
+                    for (const Point3d& other : points_b) {
                         relpoints_b.insert(rotation.rotate(other - origin_b));
                     }
                     int common_count = 0;
-                    for (const Point& point_a : relpoints_a) {
+                    for (const Point3d& point_a : relpoints_a) {
                         if (relpoints_b.find(point_a) != relpoints_b.end()) {
                             ++common_count;
                         }
@@ -146,7 +106,7 @@ namespace {
     void solve(const std::vector<std::string>& lines, bool part2) {
         auto scanners = parse_input(lines);
         std::vector<bool> computed_positions(scanners.size());
-        std::vector<Point> scanner_positions(scanners.size());
+        std::vector<Point3d> scanner_positions(scanners.size());
         computed_positions[0] = true;
         size_t num_computed = 1;
         std::vector<size_t> to_visit = {0};
@@ -159,16 +119,16 @@ namespace {
                     continue;
                 }
                 //std::cout << "Comparing " << scanner << " with " << other_scanner << std::endl;
-                Point origin_a;
-                Point origin_b;
+                Point3d origin_a;
+                Point3d origin_b;
                 const Rotation* rotation;
                 if (find_intersection(scanners[scanner], scanners[other_scanner], origin_a, origin_b, rotation)) {
-                    for (Point& point : scanners[other_scanner]) {
+                    for (Point3d& point : scanners[other_scanner]) {
                         point = rotation->rotate(point - origin_b) + origin_a;
                     }
                     ++num_computed;
                     computed_positions[other_scanner] = true;
-                    scanner_positions[other_scanner] = rotation->rotate(Point(0, 0, 0) - origin_b) + origin_a;
+                    scanner_positions[other_scanner] = rotation->rotate(Point3d(0, 0, 0) - origin_b) + origin_a;
                     to_visit.push_back(other_scanner);
                 }
             }
@@ -177,17 +137,17 @@ namespace {
         if (part2) {
             int max_distance = 0;
             for (size_t a = 0; a < scanners.size() - 1; ++a) {
-                const Point& pos_a = scanner_positions[a];
+                const Point3d& pos_a = scanner_positions[a];
                 for (size_t b = a + 1; b < scanners.size(); ++b) {
-                    const Point& pos_b = scanner_positions[b];
+                    const Point3d& pos_b = scanner_positions[b];
                     max_distance = std::max(max_distance, std::abs(pos_b.x - pos_a.x) + std::abs(pos_b.y - pos_a.y) +std::abs(pos_b.z - pos_a.z));
                 }
             }
             std::cout << max_distance << std::endl;
         } else {
-            std::unordered_set<Point> points;
+            std::unordered_set<Point3d> points;
             for (const auto &scanner: scanners) {
-                for (const Point &point: scanner) {
+                for (const Point3d &point: scanner) {
                     points.insert(point);
                 }
             }
